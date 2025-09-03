@@ -1,73 +1,103 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthProvider";
-import api from "../utils/api";
-import toast from "react-hot-toast";
-import CreateFolder from "../components/CreateFolder";
-import UploadImage from "../components/UploadImage";
-import FolderView from "../components/FolderView";
+import { api } from "../utils/api";
+import FileUpload from "../component/Dashboard/FileUpload";
 
 export default function Dashboard() {
-  const { user, logout } = useAuth();
+  const { token } = useAuth();
   const [folders, setFolders] = useState([]);
   const [images, setImages] = useState([]);
+  const [currentFolder, setCurrentFolder] = useState(null);
+  const [newFolderName, setNewFolderName] = useState("");
   const [search, setSearch] = useState("");
 
-  async function fetchData() {
-    try {
-      const res = await api.get("/drive"); // backend should return { folders, images }
-      setFolders(res.data.folders || []);
-      setImages(res.data.images || []);
-    } catch (err) {
-      toast.error("Failed to load data");
-    }
-  }
+  const loadData = async () => {
+    const data = await api.get(
+      `/drive/list${currentFolder ? `?folder=${currentFolder}` : ""}`,
+      token
+    );
+    setFolders(data.folders || []);
+    setImages(data.images || []);
+  };
+
+  const searchImages = async () => {
+    if (!search) return loadData();
+    const data = await api.get(`/images/search?name=${search}`, token);
+    setFolders([]); // hide folders during search
+    setImages(data || []);
+  };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (token) loadData();
+  }, [token, currentFolder]);
 
-  async function handleSearch(e) {
-    e.preventDefault();
-    try {
-      const res = await api.get(`/images/search?name=${search}`);
-      setImages(res.data || []);
-    } catch (err) {
-      toast.error("Search failed");
-    }
-  }
+  const createFolder = async () => {
+    if (!newFolderName) return;
+    await api.post(
+      "/drive/folder",
+      { name: newFolderName, parent: currentFolder },
+      token
+    );
+    setNewFolderName("");
+    loadData();
+  };
 
   return (
-    <div className="max-w-5xl mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Welcome, {user?.name}</h1>
-        <button
-          onClick={logout}
-          className="px-4 py-2 bg-red-500 text-white rounded"
-        >
-          Logout
-        </button>
+    <div>
+      <h2>My Drive</h2>
+
+      {/* Breadcrumbs */}
+      <div style={{ marginBottom: "1rem" }}>
+        <button onClick={() => setCurrentFolder(null)}>Root</button>
+        {currentFolder && <span> → Inside folder</span>}
       </div>
 
-      {/* Actions */}
-      <div className="flex flex-wrap gap-4 mb-6">
-        <CreateFolder onCreated={fetchData} />
-        <UploadImage onUploaded={fetchData} />
-        <form onSubmit={handleSearch} className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Search images..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="border rounded px-3 py-2"
-          />
-          <button className="px-4 py-2 bg-indigo-600 text-white rounded">
-            Search
-          </button>
-        </form>
+      {/* Search */}
+      <div style={{ marginBottom: "1rem" }}>
+        <input
+          type="text"
+          placeholder="Search images by name"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <button onClick={searchImages}>Search</button>
+        {search && <button onClick={() => { setSearch(""); loadData(); }}>Clear</button>}
       </div>
 
-      {/* Folder and Image View */}
-      <FolderView folders={folders} images={images} />
+      {/* Folder creation */}
+      <div>
+        <input
+          type="text"
+          placeholder="New folder name"
+          value={newFolderName}
+          onChange={(e) => setNewFolderName(e.target.value)}
+        />
+        <button onClick={createFolder}>Create Folder</button>
+      </div>
+
+      {/* List folders */}
+      <h3>Folders</h3>
+      <ul>
+        {folders.map((f) => (
+          <li key={f._id}>
+            <button onClick={() => setCurrentFolder(f._id)}>{f.name}</button>
+          </li>
+        ))}
+      </ul>
+
+      {/* Upload images */}
+      <FileUpload folderId={currentFolder} />
+
+      {/* List images */}
+      <h3>Images</h3>
+      <ul>
+        {images.map((img) => (
+          <li key={img._id}>
+            <img src={img.url} alt={img.name} width="100" />
+            <p>{img.name}</p>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

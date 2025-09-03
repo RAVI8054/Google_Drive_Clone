@@ -1,52 +1,58 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
-import api from "../utils/api";
-import toast from "react-hot-toast";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { api } from "../utils/api"; // create helper
 
 const AuthContext = createContext();
+export function useAuth() {
+  return useContext(AuthContext);
+}
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    const u = localStorage.getItem("user");
+    return u ? JSON.parse(u) : null;
+  });
+  const [token, setToken] = useState(localStorage.getItem("token") || null);
 
-  // Load user from token at startup
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      api.get("/auth/me")
-        .then((res) => setUser(res.data))
-        .catch(() => {
-          localStorage.removeItem("token");
-          setUser(null);
-        });
+    if (user) localStorage.setItem("user", JSON.stringify(user));
+    else localStorage.removeItem("user");
+  }, [user]);
+
+  useEffect(() => {
+    if (token) localStorage.setItem("token", token);
+    else localStorage.removeItem("token");
+  }, [token]);
+
+  const login = async (email, password) => {
+    const res = await api.post("/auth/login", { email, password });
+    if (res.token) {
+      setToken(res.token);
+      setUser(res.user);
+      return { ok: true };
     }
-  }, []);
+    return { ok: false, message: res.message };
+  };
 
-  async function signup(data) {
-    const res = await api.post("/auth/signup", data);
-    localStorage.setItem("token", res.data.token);
-    setUser(res.data.user);
-    toast.success("Signup successful");
-  }
+  const register = async (email, password, name) => {
+    const res = await api.post("/auth/register", { email, password, name });
+    if (res.token) {
+      setToken(res.token);
+      setUser(res.user);
+      return { ok: true };
+    }
+    return { ok: false, message: res.message };
+  };
 
-  async function login(data) {
-    const res = await api.post("/auth/login", data);
-    localStorage.setItem("token", res.data.token);
-    setUser(res.data.user);
-    toast.success("Login successful");
-  }
-
-  function logout() {
-    localStorage.removeItem("token");
+  const logout = () => {
     setUser(null);
-    toast.success("Logged out");
-  }
+    setToken(null);
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+  };
 
   return (
-    <AuthContext.Provider value={{ user, signup, login, logout }}>
+    <AuthContext.Provider value={{ user, token, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  return useContext(AuthContext);
 }
