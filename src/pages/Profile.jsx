@@ -2,7 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import { Mail, User, Edit2, Trash2, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import AuthContext from "../context/AuthContext";
+import { AuthContext } from "../context/AuthContext";
 import api from "../utils/axiosInstance";
 
 function Profile() {

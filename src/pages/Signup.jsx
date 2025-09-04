@@ -1,9 +1,10 @@
+// src/pages/Signup.jsx
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthProvider";
 
 export default function Signup() {
   const { register } = useAuth();
-  const [form, setForm] = useState({ email: "", password: "", name: "" });
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [err, setErr] = useState(null);
 
   const submit = async (e) => {
@@ -14,7 +15,6 @@ export default function Signup() {
 
   return (
     <div>
-      <h2>Create Account</h2>
       <form onSubmit={submit}>
         <input
           type="text"
@@ -34,7 +34,7 @@ export default function Signup() {
           value={form.password}
           onChange={(e) => setForm({ ...form, password: e.target.value })}
         />
-        <button type="submit">Sign Up</button>
+        <button type="submit">Signup</button>
       </form>
       {err && <p style={{ color: "red" }}>{err}</p>}
     </div>

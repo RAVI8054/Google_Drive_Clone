@@ -1,3 +1,4 @@
+// src/pages/Dashboard.jsx
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthProvider";
 import { api } from "../utils/api";
@@ -12,30 +13,29 @@ export default function Dashboard() {
   const [search, setSearch] = useState("");
 
   const loadData = async () => {
-    const data = await api.get(
-      `/drive/list${currentFolder ? `?folder=${currentFolder}` : ""}`,
-      token
-    );
-    setFolders(data.folders || []);
-    setImages(data.images || []);
+    const query = currentFolder ? `?parent=${currentFolder}` : "";
+    const data = await api.get(`/folders${query}`, token);
+    setFolders(data?.folders || []);
+    setImages(data?.images || []);
   };
 
   const searchImages = async () => {
     if (!search) return loadData();
-    const data = await api.get(`/images/search?name=${search}`, token);
+    const data = await api.get(`/images/search?query=${encodeURIComponent(search)}`, token);
     setFolders([]); // hide folders during search
-    setImages(data || []);
+    setImages(Array.isArray(data) ? data : data?.images || []);
   };
 
   useEffect(() => {
     if (token) loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, currentFolder]);
 
   const createFolder = async () => {
-    if (!newFolderName) return;
+    if (!newFolderName.trim()) return;
     await api.post(
-      "/drive/folder",
-      { name: newFolderName, parent: currentFolder },
+      "/folders",
+      { name: newFolderName.trim(), parent: currentFolder || null },
       token
     );
     setNewFolderName("");
@@ -61,7 +61,16 @@ export default function Dashboard() {
           onChange={(e) => setSearch(e.target.value)}
         />
         <button onClick={searchImages}>Search</button>
-        {search && <button onClick={() => { setSearch(""); loadData(); }}>Clear</button>}
+        {search && (
+          <button
+            onClick={() => {
+              setSearch("");
+              loadData();
+            }}
+          >
+            Clear
+          </button>
+        )}
       </div>
 
       {/* Folder creation */}

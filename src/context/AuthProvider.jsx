@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
-import { api } from "../utils/api"; // create helper
+// src/context/AuthProvider.jsx
+import React, { useContext, useEffect, useState } from "react";
+ import { AuthContext } from "./AuthContext";
+import { api } from "../utils/api"; // fetch wrapper (now aligned with your backend base)
 
-const AuthContext = createContext();
 export function useAuth() {
   return useContext(AuthContext);
 }
@@ -11,7 +12,7 @@ export function AuthProvider({ children }) {
     const u = localStorage.getItem("user");
     return u ? JSON.parse(u) : null;
   });
-  const [token, setToken] = useState(localStorage.getItem("token") || null);
+  const [token, setToken] = useState(() => localStorage.getItem("token") || null);
 
   useEffect(() => {
     if (user) localStorage.setItem("user", JSON.stringify(user));
@@ -24,23 +25,31 @@ export function AuthProvider({ children }) {
   }, [token]);
 
   const login = async (email, password) => {
-    const res = await api.post("/auth/login", { email, password });
-    if (res.token) {
-      setToken(res.token);
-      setUser(res.user);
-      return { ok: true };
+    try {
+      const res = await api.post("/auth/login", { email, password });
+      if (res?.token) {
+        setToken(res.token);
+        setUser(res.user || null);
+        return { ok: true };
+      }
+      return { ok: false, message: res?.message || "Login failed" };
+    } catch (e) {
+      return { ok: false, message: e?.message || "Login failed" };
     }
-    return { ok: false, message: res.message };
   };
 
   const register = async (email, password, name) => {
-    const res = await api.post("/auth/register", { email, password, name });
-    if (res.token) {
-      setToken(res.token);
-      setUser(res.user);
-      return { ok: true };
+    try {
+      const res = await api.post("/auth/signup", { email, password, name });
+      if (res?.token) {
+        setToken(res.token);
+        setUser(res.user || null);
+        return { ok: true };
+      }
+      return { ok: false, message: res?.message || "Signup failed" };
+    } catch (e) {
+      return { ok: false, message: e?.message || "Signup failed" };
     }
-    return { ok: false, message: res.message };
   };
 
   const logout = () => {

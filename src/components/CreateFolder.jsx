@@ -1,10 +1,11 @@
+// src/components/CreateFolder.jsx
 import React, { useState } from "react";
-import api from "../utils/api";
+import { api } from "../utils/api";
 import toast from "react-hot-toast";
 
 export default function CreateFolder({ onCreated }) {
   const [name, setName] = useState("");
-  const [parentId, setParentId] = useState(""); // optional for nesting
+  const [parentId, setParentId] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleCreate(e) {
@@ -13,13 +14,13 @@ export default function CreateFolder({ onCreated }) {
 
     setLoading(true);
     try {
-      await api.post("/folders", { name, parentId });
-      toast.success("Folder created");
+      await api.post("/folders", { name: name.trim(), parent: parentId || null });
       setName("");
       setParentId("");
       onCreated?.();
-    } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to create folder");
+      toast.success("Folder created");
+    } catch (e) {
+      toast.error("Failed to create folder");
     } finally {
       setLoading(false);
     }
@@ -42,8 +43,9 @@ export default function CreateFolder({ onCreated }) {
         className="border rounded px-3 py-2"
       />
       <button
+        type="submit"
         disabled={loading}
-        className="px-4 py-2 bg-green-600 text-white rounded"
+        className="px-4 py-2 rounded bg-blue-600 text-white disabled:opacity-60"
       >
         {loading ? "Creating..." : "Create"}
       </button>

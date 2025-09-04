@@ -1,8 +1,23 @@
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000/api";
+// src/utils/api.js
 
+// Base URL of your backend API
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
+
+// Centralized API endpoints
+export const endpoints = {
+  signup: "/auth/signup",
+  login: "/auth/login",
+  logout: "/auth/logout", // optional if backend supports
+  folders: "/folders",
+  images: "/images",
+  searchImages: (query) => `/images/search?query=${encodeURIComponent(query)}`,
+};
+
+// (Optional) helper for fetch-based requests
 export const api = {
   post: async (path, body, token) => {
-    const res = await fetch(`${API_BASE}${path}`, {
+    const res = await fetch(`${API_BASE_URL}${path}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -14,18 +29,8 @@ export const api = {
   },
 
   get: async (path, token) => {
-    const res = await fetch(`${API_BASE}${path}`, {
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-    });
-    return res.json();
-  },
-
-  postForm: async (path, formData, token) => {
-    const res = await fetch(`${API_BASE}${path}`, {
-      method: "POST",
-      body: formData,
+    const res = await fetch(`${API_BASE_URL}${path}`, {
+      method: "GET",
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },

@@ -1,69 +1,61 @@
-import React, { useState } from "react";
-import api from "../utils/api";
+// src/components/UploadImage.jsx
+import { useState } from "react";
+import { api } from "../utils/api";
 import toast from "react-hot-toast";
 
-export default function UploadImage({ onUploaded }) {
-  const [name, setName] = useState("");
+export default function UploadImage({ folderId, onUploaded }) {
   const [file, setFile] = useState(null);
-  const [folderId, setFolderId] = useState(""); // optional: place in folder
-  const [loading, setLoading] = useState(false);
+  const [name, setName] = useState("");
 
-  async function handleUpload(e) {
+  const handleUpload = async (e) => {
     e.preventDefault();
-    if (!name.trim() || !file) {
-      return toast.error("Image name and file are required");
-    }
+    if (!file) return toast.error("Please choose an image");
 
-    const formData = new FormData();
-    formData.append("name", name);
-    formData.append("image", file);
-    if (folderId) formData.append("folderId", folderId);
-
-    setLoading(true);
     try {
-      await api.post("/images", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+      const form = new FormData();
+      form.append("file", file);
+      form.append(
+        "upload_preset",
+        import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "unsigned_preset"
+      );
+      const cloudName =
+        import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "<your_cloud_name>";
+
+      const cloudRes = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        { method: "POST", body: form }
+      );
+      const cloudData = await cloudRes.json();
+      if (!cloudData?.secure_url) throw new Error("Cloudinary upload failed");
+
+      await api.post("/images", {
+        name: (name || file.name).trim(),
+        url: cloudData.secure_url,
+        folder: folderId || null,
+        publicId: cloudData.public_id,
       });
-      toast.success("Image uploaded");
-      setName("");
+
       setFile(null);
-      setFolderId("");
+      setName("");
       onUploaded?.();
+      toast.success("Uploaded");
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to upload image");
-    } finally {
-      setLoading(false);
+      console.error(err);
+      toast.error("Upload failed");
     }
-  }
+  };
 
   return (
-    <form onSubmit={handleUpload} className="flex gap-2">
+    <form onSubmit={handleUpload} className="flex gap-2 items-center">
+      <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] || null)} />
       <input
         type="text"
-        placeholder="Image name"
+        placeholder="Image Name"
         value={name}
         onChange={(e) => setName(e.target.value)}
         className="border rounded px-3 py-2"
       />
-      <input
-        type="file"
-        accept="image/*"
-        onChange={(e) => setFile(e.target.files[0])}
-        className="border rounded px-3 py-2"
-      />
-      <input
-        type="text"
-        placeholder="Folder ID (optional)"
-        value={folderId}
-        onChange={(e) => setFolderId(e.target.value)}
-        className="border rounded px-3 py-2"
-      />
-      <button
-        disabled={loading}
-        className="px-4 py-2 bg-blue-600 text-white rounded"
-      >
-        {loading ? "Uploading..." : "Upload"}
-      </button>
+      <button type="submit" className="px-4 py-2 rounded bg-blue-600 text-white">Upload</button>
     </form>
   );
 }

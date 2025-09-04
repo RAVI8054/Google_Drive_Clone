@@ -1,6 +1,31 @@
-import { createContext } from "react";
+// src/context/AuthContext.jsx
+import { createContext, useState, useEffect } from "react";
+import { getToken, logout } from "../services/authService";
 
-// creating the auth context.. ---  Default value is null and any components consuming this context will get the value from AuthProvider. and  this will be imported by AuthProvider or components that want to consume the context
-const AuthContext=createContext(null);
+export const AuthContext = createContext();
 
-export default AuthContext;
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const token = getToken();
+    if (token) {
+      setUser({ token }); // you can decode token if needed
+    }
+  }, []);
+
+  const loginUser = (data) => {
+    setUser({ token: data.token, user: data.user });
+  };
+
+  const logoutUser = () => {
+    logout();
+    setUser(null);
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, loginUser, logoutUser }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
