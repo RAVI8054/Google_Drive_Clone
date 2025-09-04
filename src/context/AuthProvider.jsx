@@ -1,7 +1,7 @@
 // src/context/AuthProvider.jsx
 import React, { useContext, useEffect, useState } from "react";
- import { AuthContext } from "./AuthContext";
-import { api } from "../utils/api"; // fetch wrapper (now aligned with your backend base)
+import { AuthContext } from "./AuthContext";
+import { api } from "../utils/api";
 
 export function useAuth() {
   return useContext(AuthContext);
@@ -14,11 +14,13 @@ export function AuthProvider({ children }) {
   });
   const [token, setToken] = useState(() => localStorage.getItem("token") || null);
 
+  // keep user in localStorage
   useEffect(() => {
     if (user) localStorage.setItem("user", JSON.stringify(user));
     else localStorage.removeItem("user");
   }, [user]);
 
+  // keep token in localStorage
   useEffect(() => {
     if (token) localStorage.setItem("token", token);
     else localStorage.removeItem("token");
@@ -30,7 +32,7 @@ export function AuthProvider({ children }) {
       if (res?.token) {
         setToken(res.token);
         setUser(res.user || null);
-        return { ok: true };
+        return { ok: true, token: res.token, user: res.user };
       }
       return { ok: false, message: res?.message || "Login failed" };
     } catch (e) {
@@ -44,7 +46,7 @@ export function AuthProvider({ children }) {
       if (res?.token) {
         setToken(res.token);
         setUser(res.user || null);
-        return { ok: true };
+        return { ok: true, token: res.token, user: res.user };
       }
       return { ok: false, message: res?.message || "Signup failed" };
     } catch (e) {
@@ -52,7 +54,7 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const logout = () => {
+  const logoutUser = () => {
     setUser(null);
     setToken(null);
     localStorage.removeItem("user");
@@ -60,7 +62,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, login, register, logoutUser }}>
       {children}
     </AuthContext.Provider>
   );

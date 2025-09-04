@@ -1,35 +1,30 @@
 // src/utils/driveApi.js
 import api from "./axiosInstance";
 
-// Load folders & images for a folder
-export const fetchFolderContent = async (parentId = null) => {
-  const res = await api.get("/folders", {
-    params: { parentId: parentId || "" },
-  });
-  return res.data;
-};
+// Upload image directly to Cloudinary
+export const uploadImageToCloudinary = async (file) => {
+  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+  const preset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
-// Create folder
-export const createNewFolder = async (name, parentId = null) => {
-  const res = await api.post("/folders", { name, parentId });
-  return res.data;
-};
-
-// Upload image
-export const uploadNewImage = async (file, name, folderId = null) => {
   const formData = new FormData();
-  formData.append("name", name);
-  formData.append("image", file);
-  if (folderId) formData.append("folderId", folderId);
+  formData.append("file", file);
+  formData.append("upload_preset", preset);
 
-  const res = await api.post("/images", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+    method: "POST",
+    body: formData,
   });
-  return res.data;
+
+  if (!res.ok) throw new Error("Cloudinary upload failed");
+  return res.json(); // returns { secure_url, public_id, ... }
 };
 
-// Search images
-export const searchImagesByName = async (query) => {
-  const res = await api.get("/images/search", { params: { query } });
+// Save uploaded image in your backend DB
+export const saveImageToBackend = async (name, url, folderId = null) => {
+  const res = await api.post("/images", {
+    name,
+    url,       // 👈 Cloudinary URL
+    folderId,
+  });
   return res.data;
 };

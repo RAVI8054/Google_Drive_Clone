@@ -1,12 +1,15 @@
 // src/components/CreateFolder.jsx
-import React, { useState } from "react";
-import { api } from "../utils/api";
+import React, { useState, useContext } from "react";
+import { api, endpoints } from "../utils/api";
 import toast from "react-hot-toast";
+import { AuthContext } from "../context/AuthContext";
 
 export default function CreateFolder({ onCreated }) {
   const [name, setName] = useState("");
   const [parentId, setParentId] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const { token } = useContext(AuthContext); // ✅ get auth token here
 
   async function handleCreate(e) {
     e.preventDefault();
@@ -14,13 +17,25 @@ export default function CreateFolder({ onCreated }) {
 
     setLoading(true);
     try {
-      await api.post("/folders", { name: name.trim(), parent: parentId || null });
-      setName("");
-      setParentId("");
-      onCreated?.();
-      toast.success("Folder created");
+      const res = await api.post(
+        endpoints.folders, // ✅ centralized path
+        { name: name.trim(), parent: parentId || null },
+        token || localStorage.getItem("token") // ✅ pass token!
+      );
+
+      if (res?._id) {
+        toast.success("Folder created ✅");
+        console.log("🟢 Folder created:", res);
+        setName("");
+        setParentId("");
+        onCreated?.(); // trigger parent refresh
+      } else {
+        toast.error(res?.message || "Failed to create folder ❌");
+        console.error("🔴 Folder creation failed:", res);
+      }
     } catch (e) {
-      toast.error("Failed to create folder");
+      console.error("🔥 API error creating folder:", e);
+      toast.error("Failed to create folder ❌");
     } finally {
       setLoading(false);
     }

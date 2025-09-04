@@ -1,3 +1,4 @@
+// src/component/Navbar/Navbar.jsx
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Cloud, Moon, LogIn, LayoutDashboard, User, LogOut } from "lucide-react";
@@ -111,19 +112,20 @@ const Navbar = () => {
                 )}
               </div>
 
-              {isOpen && (
-                <div className="absolute right-0 top-14 w-48 bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-                  <div className="px-4 py-3 text-sm text-gray-200 border-b border-gray-700">
-                    {fullName || "User"}
-                  </div>
-                  <button
-                    onClick={handleLogout}
-                    className="w-full text-left flex items-center gap-2 px-4 py-2 hover:bg-gray-700 text-gray-200"
-                  >
-                    <LogOut className="w-4 h-4" /> Logout
-                  </button>
-                </div>
-              )}
+             {isOpen && (
+  <div className="absolute right-0 top-14 w-48 bg-black rounded-xl shadow-lg overflow-hidden">
+    <div className="px-4 py-3 text-sm text-gray-200 border-b border-gray-700">
+      {fullName || "User"}
+    </div>
+    <button
+      onClick={handleLogout}
+      className="w-full text-left flex items-center gap-2 px-4 py-2 bg-red-600 text-white hover:bg-red-700"
+    >
+      <LogOut className="w-4 h-4" /> Logout
+    </button>
+  </div>
+)}
+
             </>
           )}
         </div>

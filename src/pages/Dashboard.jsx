@@ -1,131 +1,103 @@
-// src/pages/Dashboard.jsx
 import React, { useEffect, useState } from "react";
-import toast from "react-hot-toast";
-import api from "../utils/axiosInstance";
-
-// existing UI components
-import DashboardHeader from "../component/Dashboard/DashboardHeader";
 import Sidebar from "../component/Dashboard/Sidebar";
+import DashboardHeader from "../component/Dashboard/DashboardHeader";
 import ItemGrid from "../component/Dashboard/ItemGrid";
+import { api, endpoints } from "../utils/api";
+import { useAuth } from "../context/AuthProvider";
+import toast from "react-hot-toast";
 
 export default function Dashboard() {
+  const { token } = useAuth();
   const [folders, setFolders] = useState([]);
   const [images, setImages] = useState([]);
-  const [currentFolder, setCurrentFolder] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [currentFolderId, setCurrentFolderId] = useState(null);
+  const [folderHistory, setFolderHistory] = useState([]); // track nested navigation
 
-  // ✅ fetch user folders + images
-  const fetchData = async (folderId = null, search = "") => {
+  // 📌 Load folders/images
+  const load = async () => {
+    if (!token) return;
+    setLoading(true);
     try {
-      const folderRes = await api.get("/folders", {
-        params: { parentId: folderId },
-      });
+      const q = currentFolderId
+        ? `?parentId=${encodeURIComponent(currentFolderId)}`
+        : "";
 
-      let imageRes;
-      if (search) {
-        // 🔎 call backend search API
-        imageRes = await api.get("/images/search", {
-          params: { query: search },
-        });
-      } else {
-        imageRes = await api.get("/images", {
-          params: { folderId },
-        });
-      }
+      const folderRes = await api.get(`${endpoints.folders}${q}`, token);
+      setFolders(Array.isArray(folderRes.folders) ? folderRes.folders : []);
 
-      setFolders(folderRes.data);
-      setImages(imageRes.data);
-      setCurrentFolder(folderId);
+      const imageRes = await api.get(`${endpoints.images}${q}`, token);
+      setImages(Array.isArray(imageRes.images) ? imageRes.images : []);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to load drive data");
+      toast.error("❌ Failed to load data");
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData(); // root-level on load
-  }, []);
+    load();
+  }, [token, currentFolderId]);
 
-  // ✅ create nested folder
-  const createFolder = async () => {
-    const name = prompt("Enter folder name:");
-    if (!name) return;
-    try {
-      await api.post("/folders", { name, parentId: currentFolder });
-      toast.success("Folder created successfully");
-      fetchData(currentFolder);
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Error creating folder");
-    }
+  // 📂 When folder created → update UI
+  const handleFolderCreated = (folder) => {
+    setFolders((prev) => [...prev, folder]);
+    toast.success("📂 Folder created");
   };
 
-  // ✅ upload image
-  const uploadImage = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const formData = new FormData();
-    formData.append("image", file);
-    formData.append("name", file.name);
-    formData.append("folderId", currentFolder || "");
-
-    try {
-      await api.post("/images", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      toast.success("Image uploaded successfully");
-      fetchData(currentFolder);
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Error uploading image");
-    }
+  // 🖼️ When image uploaded → update UI
+  const handleImageUploaded = (image) => {
+    setImages((prev) => [...prev, image]);
+    toast.success("🖼️ Image uploaded");
   };
 
-  // ✅ search handler
-  const handleSearch = (query) => {
-    setSearchTerm(query);
-    fetchData(currentFolder, query);
+  // 📂 Open nested folder
+  const handleOpenFolder = (id) => {
+    setFolderHistory((prev) => [...prev, currentFolderId]);
+    setCurrentFolderId(id);
+  };
+
+  // 🔙 Back to parent
+  const handleGoBack = () => {
+    const prev = folderHistory[folderHistory.length - 1];
+    setFolderHistory((prev) => prev.slice(0, -1));
+    setCurrentFolderId(prev || null);
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-900 text-white">
-      {/* Sidebar (unchanged) */}
-      <Sidebar onCreateFolder={createFolder} onUploadImage={uploadImage} />
+    <div className="flex min-h-screen">
+      {/* Sidebar */}
+      <Sidebar
+        onFolderCreated={handleFolderCreated}
+        onImageUploaded={handleImageUploaded}
+        currentFolderId={currentFolderId}
+      />
 
-      {/* Main area */}
-      <div className="flex-1 flex flex-col">
-        {/* Header (with search) */}
-        <DashboardHeader
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          onSearch={handleSearch}
-        />
+      {/* Main content */}
+      <main className="flex-1 p-6">
+        <DashboardHeader />
+        <h1 className="text-2xl font-bold mb-4">My Drive</h1>
 
-        {/* Breadcrumb navigation */}
-        <div className="px-6 py-2">
-          {currentFolder ? (
-            <button
-              onClick={() => fetchData(null)}
-              className="text-sm text-teal-400 hover:underline"
-            >
-              ⬅ Back to root
-            </button>
-          ) : (
-            <span className="text-sm text-gray-400">Root</span>
-          )}
-        </div>
+        {/* Back button */}
+        {currentFolderId && (
+          <button
+            onClick={handleGoBack}
+            className="mb-4 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+          >
+            ⬅ Back
+          </button>
+        )}
 
-        {/* Drive content */}
-        <main className="flex-1 p-6 overflow-y-auto">
+        {loading ? (
+          <p>Loading...</p>
+        ) : (
           <ItemGrid
             folders={folders}
             images={images}
-            onOpenFolder={(id) => fetchData(id)}
+            onOpenFolder={handleOpenFolder}
           />
-        </main>
-
-        {/* Footer */}
-        <footer className="bg-gray-800 py-3 text-center text-sm text-gray-400">
-          © {new Date().getFullYear()} My Drive Clone
-        </footer>
-      </div>
+        )}
+      </main>
     </div>
   );
 }

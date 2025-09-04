@@ -1,26 +1,39 @@
-// src/pages/Login.jsx
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthProvider";
 import { Mail, Lock } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function Login() {
   const { login } = useAuth();
   const [form, setForm] = useState({ email: "", password: "" });
-  const [err, setErr] = useState(null);
+  const [message, setMessage] = useState(null); // success/error messages
+  const [type, setType] = useState("error"); // "success" | "error"
+  const navigate = useNavigate();
 
   const submit = async (e) => {
     e.preventDefault();
+    console.log("🟡 Attempting login with:", form);
+
     const res = await login(form.email, form.password);
-    if (!res.ok) setErr(res.message);
+
+    if (res.ok) {
+      console.log("🟢 Login successful:", res);
+      setType("success");
+      setMessage("Login successful 🎉 Redirecting...");
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1200); // small delay so user sees message
+    } else {
+      console.error("🔴 Login failed:", res.message);
+      setType("error");
+      setMessage(res.message || "Login failed ❌");
+    }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900 px-4">
       <div className="w-full max-w-md bg-gray-800 p-8 rounded-2xl shadow-lg">
-        <h2 className="text-2xl font-bold text-center text-teal-400">
-          Login
-        </h2>
+        <h2 className="text-2xl font-bold text-center text-teal-400">Login</h2>
 
         {/* Form */}
         <form onSubmit={submit} className="mt-6 space-y-4">
@@ -56,9 +69,15 @@ export default function Login() {
           </button>
         </form>
 
-        {/* Error message */}
-        {err && (
-          <p className="mt-3 text-center text-red-400 text-sm">{err}</p>
+        {/* ✅ Success/Error message */}
+        {message && (
+          <p
+            className={`mt-3 text-center text-sm ${
+              type === "error" ? "text-red-400" : "text-green-400"
+            }`}
+          >
+            {message}
+          </p>
         )}
 
         {/* Divider */}
