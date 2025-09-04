@@ -1,12 +1,12 @@
-// src/utils/axiosInstance.jsx
 import axios from "axios";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE ||
-  "https://cloud-drive-project-backend.onrender.com/api";
+  "https://google-drive-backend-74dm.onrender.com/api"; // <-- correct backend link
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
+  withCredentials: true, // optional, if you use cookies/session
 });
 
 axiosInstance.interceptors.request.use((config) => {

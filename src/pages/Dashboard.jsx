@@ -1,112 +1,131 @@
 // src/pages/Dashboard.jsx
 import React, { useEffect, useState } from "react";
-import { useAuth } from "../context/AuthProvider";
-import { api } from "../utils/api";
-import FileUpload from "../component/Dashboard/FileUpload";
+import toast from "react-hot-toast";
+import api from "../utils/axiosInstance";
+
+// existing UI components
+import DashboardHeader from "../component/Dashboard/DashboardHeader";
+import Sidebar from "../component/Dashboard/Sidebar";
+import ItemGrid from "../component/Dashboard/ItemGrid";
 
 export default function Dashboard() {
-  const { token } = useAuth();
   const [folders, setFolders] = useState([]);
   const [images, setImages] = useState([]);
   const [currentFolder, setCurrentFolder] = useState(null);
-  const [newFolderName, setNewFolderName] = useState("");
-  const [search, setSearch] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const loadData = async () => {
-    const query = currentFolder ? `?parent=${currentFolder}` : "";
-    const data = await api.get(`/folders${query}`, token);
-    setFolders(data?.folders || []);
-    setImages(data?.images || []);
-  };
+  // ✅ fetch user folders + images
+  const fetchData = async (folderId = null, search = "") => {
+    try {
+      const folderRes = await api.get("/folders", {
+        params: { parentId: folderId },
+      });
 
-  const searchImages = async () => {
-    if (!search) return loadData();
-    const data = await api.get(`/images/search?query=${encodeURIComponent(search)}`, token);
-    setFolders([]); // hide folders during search
-    setImages(Array.isArray(data) ? data : data?.images || []);
+      let imageRes;
+      if (search) {
+        // 🔎 call backend search API
+        imageRes = await api.get("/images/search", {
+          params: { query: search },
+        });
+      } else {
+        imageRes = await api.get("/images", {
+          params: { folderId },
+        });
+      }
+
+      setFolders(folderRes.data);
+      setImages(imageRes.data);
+      setCurrentFolder(folderId);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to load drive data");
+    }
   };
 
   useEffect(() => {
-    if (token) loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, currentFolder]);
+    fetchData(); // root-level on load
+  }, []);
 
+  // ✅ create nested folder
   const createFolder = async () => {
-    if (!newFolderName.trim()) return;
-    await api.post(
-      "/folders",
-      { name: newFolderName.trim(), parent: currentFolder || null },
-      token
-    );
-    setNewFolderName("");
-    loadData();
+    const name = prompt("Enter folder name:");
+    if (!name) return;
+    try {
+      await api.post("/folders", { name, parentId: currentFolder });
+      toast.success("Folder created successfully");
+      fetchData(currentFolder);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Error creating folder");
+    }
+  };
+
+  // ✅ upload image
+  const uploadImage = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append("image", file);
+    formData.append("name", file.name);
+    formData.append("folderId", currentFolder || "");
+
+    try {
+      await api.post("/images", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      toast.success("Image uploaded successfully");
+      fetchData(currentFolder);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Error uploading image");
+    }
+  };
+
+  // ✅ search handler
+  const handleSearch = (query) => {
+    setSearchTerm(query);
+    fetchData(currentFolder, query);
   };
 
   return (
-    <div>
-      <h2>My Drive</h2>
+    <div className="flex min-h-screen bg-gray-900 text-white">
+      {/* Sidebar (unchanged) */}
+      <Sidebar onCreateFolder={createFolder} onUploadImage={uploadImage} />
 
-      {/* Breadcrumbs */}
-      <div style={{ marginBottom: "1rem" }}>
-        <button onClick={() => setCurrentFolder(null)}>Root</button>
-        {currentFolder && <span> → Inside folder</span>}
-      </div>
-
-      {/* Search */}
-      <div style={{ marginBottom: "1rem" }}>
-        <input
-          type="text"
-          placeholder="Search images by name"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+      {/* Main area */}
+      <div className="flex-1 flex flex-col">
+        {/* Header (with search) */}
+        <DashboardHeader
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          onSearch={handleSearch}
         />
-        <button onClick={searchImages}>Search</button>
-        {search && (
-          <button
-            onClick={() => {
-              setSearch("");
-              loadData();
-            }}
-          >
-            Clear
-          </button>
-        )}
+
+        {/* Breadcrumb navigation */}
+        <div className="px-6 py-2">
+          {currentFolder ? (
+            <button
+              onClick={() => fetchData(null)}
+              className="text-sm text-teal-400 hover:underline"
+            >
+              ⬅ Back to root
+            </button>
+          ) : (
+            <span className="text-sm text-gray-400">Root</span>
+          )}
+        </div>
+
+        {/* Drive content */}
+        <main className="flex-1 p-6 overflow-y-auto">
+          <ItemGrid
+            folders={folders}
+            images={images}
+            onOpenFolder={(id) => fetchData(id)}
+          />
+        </main>
+
+        {/* Footer */}
+        <footer className="bg-gray-800 py-3 text-center text-sm text-gray-400">
+          © {new Date().getFullYear()} My Drive Clone
+        </footer>
       </div>
-
-      {/* Folder creation */}
-      <div>
-        <input
-          type="text"
-          placeholder="New folder name"
-          value={newFolderName}
-          onChange={(e) => setNewFolderName(e.target.value)}
-        />
-        <button onClick={createFolder}>Create Folder</button>
-      </div>
-
-      {/* List folders */}
-      <h3>Folders</h3>
-      <ul>
-        {folders.map((f) => (
-          <li key={f._id}>
-            <button onClick={() => setCurrentFolder(f._id)}>{f.name}</button>
-          </li>
-        ))}
-      </ul>
-
-      {/* Upload images */}
-      <FileUpload folderId={currentFolder} />
-
-      {/* List images */}
-      <h3>Images</h3>
-      <ul>
-        {images.map((img) => (
-          <li key={img._id}>
-            <img src={img.url} alt={img.name} width="100" />
-            <p>{img.name}</p>
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }
