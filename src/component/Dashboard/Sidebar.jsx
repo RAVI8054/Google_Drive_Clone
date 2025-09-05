@@ -17,7 +17,13 @@ export default function Sidebar({ onFolderCreated, onImageUploaded, currentFolde
         { name, parent: currentFolderId || null },
         token
       );
-      onFolderCreated(res.folder);
+
+      // ✅ handle both cases: res.folder OR res
+      const newFolder = res.folder || res;
+      if (newFolder && onFolderCreated) {
+        onFolderCreated(newFolder);
+      }
+
       toast.success("✅ Folder created");
     } catch (err) {
       console.error("Folder create error:", err);
@@ -67,7 +73,12 @@ export default function Sidebar({ onFolderCreated, onImageUploaded, currentFolde
         token
       );
 
-      onImageUploaded(res); // update parent
+      // ✅ handle both cases: res.image OR res
+      const newImage = res.image || res;
+      if (newImage && onImageUploaded) {
+        onImageUploaded(newImage);
+      }
+
       toast.success("✅ Image uploaded successfully!");
     } catch (err) {
       console.error("Upload error:", err);
