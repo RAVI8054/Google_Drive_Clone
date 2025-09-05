@@ -9,7 +9,7 @@ export default function CreateFolder({ onCreated }) {
   const [parentId, setParentId] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const { token } = useContext(AuthContext); // ✅ get auth token here
+  const { token } = useContext(AuthContext); //  get auth token here
 
   async function handleCreate(e) {
     e.preventDefault();
@@ -18,23 +18,23 @@ export default function CreateFolder({ onCreated }) {
     setLoading(true);
     try {
       const res = await api.post(
-        endpoints.folders, // ✅ centralized path
+        endpoints.folders, // centralized path
         { name: name.trim(), parent: parentId || null },
-        token || localStorage.getItem("token") // ✅ pass token!
+        token || localStorage.getItem("token") // pass token!
       );
 
       if (res?._id) {
         toast.success("Folder created ✅");
-        console.log("🟢 Folder created:", res);
+        console.log(" Folder created:", res);
         setName("");
         setParentId("");
         onCreated?.(); // trigger parent refresh
       } else {
         toast.error(res?.message || "Failed to create folder ❌");
-        console.error("🔴 Folder creation failed:", res);
+        console.error("Folder creation failed:", res);
       }
     } catch (e) {
-      console.error("🔥 API error creating folder:", e);
+      console.error(" API error creating folder:", e);
       toast.error("Failed to create folder ❌");
     } finally {
       setLoading(false);

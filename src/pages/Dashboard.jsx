@@ -14,7 +14,7 @@ export default function Dashboard() {
   const [currentFolderId, setCurrentFolderId] = useState(null);
   const [folderHistory, setFolderHistory] = useState([]); // track nested navigation
 
-  // 📌 Load folders/images
+  //  Load folders/images
   const load = async () => {
     if (!token) return;
     setLoading(true);
@@ -29,7 +29,7 @@ export default function Dashboard() {
       const imageRes = await api.get(`${endpoints.images}${q}`, token);
       setImages(Array.isArray(imageRes.images) ? imageRes.images : []);
     } catch (err) {
-      toast.error("❌ Failed to load data");
+      toast.error("Failed to load data");
     } finally {
       setLoading(false);
     }
@@ -39,25 +39,25 @@ export default function Dashboard() {
     load();
   }, [token, currentFolderId]);
 
-  // 📂 When folder created → update UI
+  //  When folder created → update UI
   const handleFolderCreated = (folder) => {
     setFolders((prev) => [...prev, folder]);
-    toast.success("📂 Folder created");
+    toast.success(" Folder created");
   };
 
-  // 🖼️ When image uploaded → update UI
+  //  When image uploaded → update UI
   const handleImageUploaded = (image) => {
     setImages((prev) => [...prev, image]);
-    toast.success("🖼️ Image uploaded");
+    toast.success("Image uploaded");
   };
 
-  // 📂 Open nested folder
+  //  Open nested folder
   const handleOpenFolder = (id) => {
     setFolderHistory((prev) => [...prev, currentFolderId]);
     setCurrentFolderId(id);
   };
 
-  // 🔙 Back to parent
+  //  Back to parent
   const handleGoBack = () => {
     const prev = folderHistory[folderHistory.length - 1];
     setFolderHistory((prev) => prev.slice(0, -1));

@@ -4,11 +4,11 @@ import { Menu, LogOut } from "lucide-react";
 import { useAuth } from "../../context/AuthProvider";
 
 export default function DashboardHeader({ onMenuClick }) {
-  const { user, logoutUser } = useAuth(); // ✅ correct function name
+  const { user, logoutUser } = useAuth(); //  function name
   const [menuOpen, setMenuOpen] = useState(false);
 
   const handleLogout = () => {
-    logoutUser(); // ✅ call logoutUser
+    logoutUser(); //  call logoutUser
     setMenuOpen(false);
   };
 
@@ -34,7 +34,7 @@ export default function DashboardHeader({ onMenuClick }) {
             // onClick={() => setMenuOpen(!menuOpen)}
              className="flex items-center space-x-2 focus:outline-none"
           >
-            {/* ✅ Show user avatar or fallback */}
+            {/* Show user avatar or fallback */}
             <img
               src={user?.avatar || "/default-avatar.png"}
               alt={user?.name || user?.email || "User"}

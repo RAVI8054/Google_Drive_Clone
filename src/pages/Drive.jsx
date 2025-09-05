@@ -12,7 +12,7 @@ export default function Drive() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [search, setSearch] = useState("");
 
-  // ✅ Fetch folders + images on mount
+  //  Fetch folders + images on mount
   useEffect(() => {
     fetchFolders();
     fetchImages();

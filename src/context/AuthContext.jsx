@@ -10,7 +10,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const token = getToken();
     if (token) {
-      setUser({ token }); // you can decode token if needed
+      setUser({ token }); //  decode token if needed
     }
   }, []);
 

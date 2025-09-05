@@ -6,7 +6,7 @@ import { api, endpoints } from "../../utils/api";
 export default function Sidebar({ onFolderCreated, onImageUploaded, currentFolderId }) {
   const { token } = useAuth();
 
-  // 📂 Create folder
+  //  Create folder
   const handleCreateFolder = async () => {
     const name = prompt("Enter folder name:");
     if (!name) return;
@@ -18,7 +18,7 @@ export default function Sidebar({ onFolderCreated, onImageUploaded, currentFolde
         token
       );
 
-      // ✅ handle both cases: res.folder OR res
+      // handle both cases: res.folder OR res
       const newFolder = res.folder || res;
       if (newFolder && onFolderCreated) {
         onFolderCreated(newFolder);
@@ -31,7 +31,7 @@ export default function Sidebar({ onFolderCreated, onImageUploaded, currentFolde
     }
   };
 
-  // 🖼️ Upload image (Cloudinary → backend)
+  //  Upload image (Cloudinary → backend)
   const handleUploadImage = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -68,7 +68,7 @@ export default function Sidebar({ onFolderCreated, onImageUploaded, currentFolde
         endpoints.images,
         {
           name,
-          url: cloudData.secure_url, // ✅ Cloudinary link
+          url: cloudData.secure_url, // Cloudinary link
           publicId: cloudData.public_id,
           format: cloudData.format,
           size: cloudData.bytes,
@@ -77,7 +77,7 @@ export default function Sidebar({ onFolderCreated, onImageUploaded, currentFolde
         token
       );
 
-      // ✅ handle both cases: res.image OR res
+      // handle both cases: res.image OR res
       const newImage = res.image || res;
       if (newImage && onImageUploaded) {
         onImageUploaded(newImage);
