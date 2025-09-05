@@ -39,12 +39,14 @@ export default function Sidebar({ onFolderCreated, onImageUploaded, currentFolde
     const name = prompt("Enter image name:");
     if (!name) return;
 
+    // show uploading toast (persisting)
+    const toastId = toast.loading("⏳ Uploading image...");
+
     try {
       // 1️⃣ Upload to Cloudinary
-      
       const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
       const preset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-console.log("Cloudinary config:", cloudName, preset);
+      console.log("Cloudinary config:", cloudName, preset);
 
       const formData = new FormData();
       formData.append("file", file);
@@ -81,11 +83,13 @@ console.log("Cloudinary config:", cloudName, preset);
         onImageUploaded(newImage);
       }
 
-
-      toast.success("✅ Image uploaded successfully!");
+      // update toast → success
+      toast.success("✅ Image uploaded successfully!", { id: toastId });
     } catch (err) {
       console.error("Upload error:", err);
-      toast.error("❌ Failed to upload image");
+
+      // update toast → error
+      toast.error("❌ Failed to upload image", { id: toastId });
     }
   };
 

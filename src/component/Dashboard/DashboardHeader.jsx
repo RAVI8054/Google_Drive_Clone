@@ -31,8 +31,8 @@ export default function DashboardHeader({ onMenuClick }) {
         {/* Right: User menu */}
         <div className="relative">
           <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="flex items-center space-x-2 focus:outline-none"
+            // onClick={() => setMenuOpen(!menuOpen)}
+             className="flex items-center space-x-2 focus:outline-none"
           >
             {/* ✅ Show user avatar or fallback */}
             <img
