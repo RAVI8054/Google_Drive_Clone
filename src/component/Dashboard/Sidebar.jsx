@@ -41,8 +41,10 @@ export default function Sidebar({ onFolderCreated, onImageUploaded, currentFolde
 
     try {
       // 1️⃣ Upload to Cloudinary
+      
       const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
       const preset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+console.log("Cloudinary config:", cloudName, preset);
 
       const formData = new FormData();
       formData.append("file", file);
@@ -78,6 +80,7 @@ export default function Sidebar({ onFolderCreated, onImageUploaded, currentFolde
       if (newImage && onImageUploaded) {
         onImageUploaded(newImage);
       }
+
 
       toast.success("✅ Image uploaded successfully!");
     } catch (err) {
