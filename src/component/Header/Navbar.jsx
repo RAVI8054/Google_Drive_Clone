@@ -26,7 +26,7 @@ const Navbar = () => {
 
   const handleLogout = () => {
     logoutUser();
-    navigate("/login");
+    navigate("/");
   };
 
   function toggleDropdown() {
@@ -66,7 +66,7 @@ const Navbar = () => {
         {/* Center Links */}
         <ul className="hidden md:flex items-center gap-8 font-medium text-gray-300 lg:text-lg">
           <li><Link to="/" className="hover:text-teal-400">Home</Link></li>
-          <li><Link to="/features" className="hover:text-teal-400">Features</Link></li>
+          <li><Link to="#" className="hover:text-teal-400">Features</Link></li>
           <li><Link to="#" className="hover:text-teal-400">Pricing</Link></li>
           <li><Link to="#" className="hover:text-teal-400">About</Link></li>
         </ul>
